@@ -4,10 +4,12 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <string.h>
-#define PORT 8080
    
 int main(int argc, char const *argv[])
 {
+    const int PORT = 8080;
+    const char* HOST = "127.0.0.1";
+
     int sock = 0, valread;
     struct sockaddr_in serv_addr;
     char *hello = "Hello from client";
@@ -34,7 +36,6 @@ int main(int argc, char const *argv[])
         return -1;
     }
     send(sock , hello , strlen(hello) , 0 );
-    printf("%s\n", sock);
     printf("Hello message sent\n");
     valread = read( sock , buffer, 1024);
     printf("%s\n",buffer );
