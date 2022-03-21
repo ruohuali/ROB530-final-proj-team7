@@ -4,7 +4,38 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <string.h>
-   
+#include <iostream>
+#include <vector>
+
+std::vector<std::vector<unsigned char>> pseudoImage(int row_num, int col_num) {
+    std::vector<std::vector<unsigned char>> arr;
+    for (int i = 0; i < row_num; i++) {
+        std::vector<unsigned char> row;
+        for (int j = 0; j < col_num; j++) {
+            row.push_back(i * col_num + j);
+        }
+        arr.push_back(row);
+    }
+    return arr;
+}
+
+void sendImage(std::vector<std::vector<unsigned char>> arr, int sock) {
+    int row_num = arr.size();
+    int col_num = arr[0].size();
+	unsigned char msg[row_num*col_num] = {0};
+    for (int i = 0; i < row_num; i++) {
+        for (int j = 0; j < col_num; j++) {
+            msg[i*col_num + j] = arr[i][j];
+        }
+    }    
+    send(sock, (void*)msg, row_num*col_num, 0);
+    printf("all char sent\n");
+}
+
+std::vector<double> byteArray2Float(unsigned char* buffer) {
+
+}
+
 int main(int argc, char const *argv[])
 {
     const int PORT = 8080;
@@ -12,8 +43,7 @@ int main(int argc, char const *argv[])
 
     int sock = 0, valread;
     struct sockaddr_in serv_addr;
-    char *hello = "Hello from client";
-    char buffer[1024] = {0};
+    double buffer[7] = {0};
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
         printf("\n Socket creation error \n");
@@ -30,14 +60,19 @@ int main(int argc, char const *argv[])
         return -1;
     }
    
-    if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
+    if(connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
     {
         printf("\nConnection Failed \n");
         return -1;
     }
-    send(sock , hello , strlen(hello) , 0 );
-    printf("Hello message sent\n");
-    valread = read( sock , buffer, 1024);
-    printf("%s\n",buffer );
+
+    std::vector<std::vector<unsigned char>> arr = pseudoImage(10, 20);
+    sendImage(arr, sock);
+    valread = read(sock , buffer, 1024);
+    // printf("%s\n",buffer);    
+    for (int i = 0; i < 7; i++) {
+        printf("%f\n", buffer[i]);    
+    }
+    printf("all float received\n");
     return 0;
 }
