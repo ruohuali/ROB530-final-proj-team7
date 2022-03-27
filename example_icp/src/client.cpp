@@ -52,20 +52,36 @@ int main(int argc, char const *argv[])
    
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(PORT);
-       
+    std::cout <<AF_INET<<std::endl;
     // Convert IPv4 and IPv6 addresses from text to binary form
     if(inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr)<=0) 
     {
         printf("\nInvalid address/ Address not supported \n");
         return -1;
     }
-   
+    std::cout << "Trying to connect..."<<std::endl;
+    
+    // Codes to Try out the port to connect
+    /*int i = 0;
+    for (i=0; i < 99999; i++){
+    	serv_addr.sin_port = htons(i);
+    	if(connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
+    		continue;
+    	else{
+    		std::cout<<"Connected!!"<<std::endl;
+    		std::cout<<i<<std::endl;
+    	}
+
+    }
+    std::cout<<"Tried range: [0, " << i << " Over"<<std::endl;
+    return 0;*/
     if(connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
     {
+    	std::cout<<connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) <<std::endl;
         printf("\nConnection Failed \n");
         return -1;
     }
-
+    std::cout <<"Connection Done"<<std::endl;
     std::vector<std::vector<unsigned char>> arr = pseudoImage(10, 20);
     sendImage(arr, sock);
     valread = read(sock , buffer, 1024);
