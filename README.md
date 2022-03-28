@@ -14,17 +14,17 @@ I have not modified anything yet, except several TODOs in the files listed below
 I am considering passing the name of the image that the currently evaluated frame is using to 
 python model, and then generate several logits for comparison
 The trajectory would be:
-1. in mono_kitti.cc, pass an extra variable as the name of the image to system "SLAM"
+1. *in mono_kitti.cc, pass an extra variable as the name of the image to system "SLAM" 
 
-2. in System.cc, pass an extra variable as the name of the image to "mpTracking"
+2. *in System.cc/System.h, pass an extra variable as the name of the image to "mpTracking"
 
-3. in Tracking.cc, pass an extra variable as the name of the image to "mCurrentFrame"
+3. *in Tracking.cc/Tracking.h, pass an extra variable as the name of the image to "mCurrentFrame"
 
-4. in Frame.h/Frame.cc, add a new member as the name of the image
+4. *in Frame.h/Frame.cc, add a new member as the name of the image
 
-5. in KeyFrame.h/KeyFrame.cc, add a new member as the name of the image
+5. *in KeyFrame.h/KeyFrame.cc, add a new member as the name of the image
 
-6. in LoopClosing.cc, instead of using mBowVec, pass the name of the image of the KeyFrame to the socket and 
+6. *in LoopClosing.cc, instead of using mBowVec, pass the name of the image of the KeyFrame to the socket and 
 grab the logits
 
 7. (optional) in LoopClosing.cc, replace "score()" with our own way to calculate the similarity between two vectors,

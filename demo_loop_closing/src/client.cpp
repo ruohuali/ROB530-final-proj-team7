@@ -4,7 +4,7 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <string>
-#include <string.h>
+
 #include <iostream>
 #include <vector>
 /*
@@ -45,7 +45,7 @@ int main(int argc, char const *argv[])
 
     int sock = 0, valread;
     struct sockaddr_in serv_addr;
-    double buffer[7] = {0};
+    double buffer[2048] = {0};
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
         printf("\n Socket creation error \n");
@@ -90,11 +90,12 @@ int main(int argc, char const *argv[])
     const char* msg= argv[1];
     send(sock, (void*)msg, img_name.size(), 0);
     printf("all char sent\n");
-    valread = read(sock , buffer, 1024);
+    valread = read(sock , buffer, 2048*8);
     // printf("%s\n",buffer);    
     for (int i = 0; i < 5; i++) {
         printf("%f\n", buffer[i]);    
     }
+    printf("end:%f\n", buffer[2047]);
     printf("all float received\n");
     return 0;
 }
