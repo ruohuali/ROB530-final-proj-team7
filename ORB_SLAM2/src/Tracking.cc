@@ -41,6 +41,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+// Comm //
+#include <stdio.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <string.h>
+#include <string>
+// Comm //
 
 using namespace std;
 
@@ -270,8 +278,6 @@ cv::Mat Tracking::GrabImageMonocular(const cv::Mat &im, const double &timestamp)
 
 void Tracking::Track()
 {
-    cout << "begin" << mLastFrame.mTcw << endl;
-    cout << "last frame id" << mLastFrame.mnId << endl;
     if(mState==NO_IMAGES_YET)
     {
         mState = NOT_INITIALIZED;
@@ -343,7 +349,6 @@ void Tracking::Track()
                 if(!mbVO)
                 {
                     // In last frame we tracked enough MapPoints in the map
-
                     if(!mVelocity.empty())
                     {
                         bOK = TrackWithMotionModel();
@@ -784,9 +789,70 @@ bool Tracking::TrackReferenceKeyFrame()
 
     /***************************************************
     @note these keypoints are maybe irrelevant
-    temp save them just in case needed for mapping plotting
+    temp save them just in case needed for mapping and plotting
     ****************************************************/
     Optimizer::PoseOptimization(&mCurrentFrame);
+
+
+    /***************************************************
+    **********************  Comm  **********************
+    ****************************************************/    
+    const int PORT = 8080;
+    const char* HOST = "127.0.0.1";
+
+    int sock = 0, valread;
+    struct sockaddr_in serv_addr;
+    char *hello = "Hello from client";
+    char buffer[1024] = {0};
+    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+    {
+        printf("\n Socket creation error \n");
+        return -1;
+    }
+   
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(PORT);
+       
+    // Convert IPv4 and IPv6 addresses from text to binary form
+    if(inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr)<=0) 
+    {
+        printf("\nInvalid address/ Address not supported \n");
+        return -1;
+    }
+   
+    if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
+    {
+        printf("\nConnection Failed \n");
+        return -1;
+    }
+
+    std::string frame_id_str = std::to_string(mCurrentFrame.mnId);
+    char* frame_id_bytes = const_cast<char*>(frame_id_str.c_str());
+
+    // send(sock , hello , strlen(hello) , 0 );
+    send(sock , frame_id_bytes , strlen(frame_id_bytes) , 0 );    
+    printf("Hello message sent by cpp\n");
+
+    int BUFFER_SIZE = 1024 * 64;
+    double pose_buffer[BUFFER_SIZE] = {0};
+    valread = read( sock , pose_buffer, 1024);
+    for (int i = 0; i < 16; i++) {
+        cout << pose_buffer[i] << endl;
+    }    
+    printf("message received by cpp \n");
+
+    cv::Mat pose_mat(cv::Size(4, 4), CV_64FC1);
+    for(int i = 0; i < pose_mat.rows; i++){
+        for(int j = 0; j < pose_mat.cols; j++){
+            pose_mat.at<double>(i, j) = pose_buffer[i*pose_mat.cols + j];
+        }
+    }    
+    cout << "pose_buffer[i]" << endl;
+    cout << pose_mat << endl;
+    /***************************************************
+    **********************  Comm  **********************
+    ****************************************************/        
+
 
     // Discard outliers
     int nmatchesMap = 0;
