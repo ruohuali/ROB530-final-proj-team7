@@ -88,14 +88,26 @@ int main(int argc, char const *argv[])
     std::cout <<"Handle image: " << img_name <<"size: "<<img_name.size()<<std::endl;
     //Send the name of the image
     const char* msg= argv[1];
-    send(sock, (void*)msg, img_name.size(), 0);
-    printf("all char sent\n");
-    valread = read(sock , buffer, 2048*8);
-    // printf("%s\n",buffer);    
-    for (int i = 0; i < 5; i++) {
-        printf("%f\n", buffer[i]);    
+    int command;
+    std::cout << "Input your command: "<<std::endl;
+    std::cin >> command;
+    while(1){
+    	if (command == 1){
+    		send(sock, (void*)msg, img_name.size(), 0);
+			printf("all char sent\n");
+			valread = read(sock , buffer, 2048*8);
+			// printf("%s\n",buffer);    
+			for (int i = 0; i < 5; i++) {
+				printf("%f\n", buffer[i]);    
+			}
+			printf("end:%f\n", buffer[2047]);
+			printf("all float received\n");
+    	
+    	}
+    	else if (command == 0)
+    		break;
+    
     }
-    printf("end:%f\n", buffer[2047]);
-    printf("all float received\n");
+    
     return 0;
 }

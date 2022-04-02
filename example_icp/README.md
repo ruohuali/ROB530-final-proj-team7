@@ -14,3 +14,7 @@ To check the demonstration on your local PC, do the following:
 4. (Python server) open a terminal, run "server.py", using, for example, "python3" in Linux
 5. open **another** terminal, run "make"
 6. in the same terminal, run "./client", then you should see the outputs from both the client and the server
+
+
+# Update 4/2/2022
+Modified the server so that it will not shut down after it sends the message back. Also modified the client equipped with it

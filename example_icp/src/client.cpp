@@ -83,12 +83,25 @@ int main(int argc, char const *argv[])
     }
     std::cout <<"Connection Done"<<std::endl;
     std::vector<std::vector<unsigned char>> arr = pseudoImage(10, 20);
-    sendImage(arr, sock);
-    valread = read(sock , buffer, 1024);
-    // printf("%s\n",buffer);    
-    for (int i = 0; i < 7; i++) {
-        printf("%f\n", buffer[i]);    
+    
+    int command;
+    while (1){
+    	std::cout << "Input your command: ";
+		std::cin >> command;
+		if (command == 1){
+			sendImage(arr, sock);
+			valread = read(sock , buffer, 1024);
+			// printf("%s\n",buffer);    
+			for (int i = 0; i < 7; i++) {
+		    	printf("%f\n", buffer[i]);    
+			}
+			printf("all float received\n");
+    	}
+    	else
+    		break;
+    
     }
-    printf("all float received\n");
+    
+    
     return 0;
 }
