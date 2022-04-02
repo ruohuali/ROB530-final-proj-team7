@@ -64,38 +64,39 @@ centre_crop = trn.Compose([
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
 	s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 	s.bind((HOST, PORT))
-	s.listen()
-	conn, addr = s.accept()
-	with conn:
-		data = conn.recv(200)
-		print(data)
+	while True:
+		s.listen()
+		conn, addr = s.accept()
+		with conn:
+			data = conn.recv(200)
+			print(data)
 
-		# load the test image
-		img_name = data.decode('UTF-8')
-		print("Handled image:")
-		print(img_name)
-		if not os.access(img_name, os.W_OK):
-			img_url = 'http://places.csail.mit.edu/demo/' + img_name
-			os.system('wget ' + img_url)
-		img = Image.open(img_name)
-		# Grayscale image... convert it into three channels by simply stacking the channels
-		
-		img = img.convert('RGB')
-		input_img = V(centre_crop(img).unsqueeze(0))
+			# load the test image
+			img_name = data.decode('UTF-8')
+			print("Handled image:")
+			print(img_name)
+			if not os.access(img_name, os.W_OK):
+				img_url = 'http://places.csail.mit.edu/demo/' + img_name
+				os.system('wget ' + img_url)
+			img = Image.open(img_name)
+			# Grayscale image... convert it into three channels by simply stacking the channels
+			
+			img = img.convert('RGB')
+			input_img = V(centre_crop(img).unsqueeze(0))
 
-		
-		
+			
+			
 
-		# forward pass
-		logit = (model.forward(input_img)).view(-1)
-		logit, _ = logit.sort(stable=True)
-		logit = torch.nn.functional.normalize(logit, dim=0)
-		lst = logit.tolist()
-		print(len(lst))
-		msg = floatList2Bytes(lst)
-		for i in range(5):
-			print(lst[i])
-		print("End:")
-		print(lst[-1])
-		conn.sendall(msg)
-		print("all floats sent")
+			# forward pass
+			logit = (model.forward(input_img)).view(-1)
+			logit, _ = logit.sort(stable=True)
+			logit = torch.nn.functional.normalize(logit, dim=0)
+			lst = logit.tolist()
+			print(len(lst))
+			msg = floatList2Bytes(lst)
+			for i in range(5):
+				print(lst[i])
+			print("End:")
+			print(lst[-1])
+			conn.sendall(msg)
+			print("all floats sent")

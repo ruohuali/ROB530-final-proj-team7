@@ -33,3 +33,8 @@ but in a similar manner described in OrbVocabulary.h/TemplateVocabular.h/
 
 **Update 3/28/2022
 Have completed the steps listed above in general (marked in "*"). Now, the problem is... the server would shut up immediately after it receives the data and sends it back to the client, while the client needs to send the names of the image to the server several times. We need to fix this. 
+
+**Update 4/2/2022
+Have modified the server such that it won't shut down automatically after sending one piece of data (just by adding a while True ...) You may try it by yourself in demo_loop_closing and example_icp directory
+Also modify the file KeyFrameDataBase.cc, which was omitted by me last time. I fix the function to find the candidate keyframes. Now the whole pipeline works normally, at least it appears so.
+I hope to explore more about the loop closing algorithm. To be frank, it depends more on the ORB vocabulary than I thought. I want to evaluate the significance of our change, and maybe try to replace more parts with our own method
