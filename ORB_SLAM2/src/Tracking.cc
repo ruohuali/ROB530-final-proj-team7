@@ -796,7 +796,8 @@ bool Tracking::TrackReferenceKeyFrame()
 
     /***************************************************
     **********************  Comm  **********************
-    ****************************************************/    
+    ****************************************************/   
+    printf("\nConnection Ready \n");
     const int PORT = 8080;
     const char* HOST = "127.0.0.1";
 
@@ -831,24 +832,40 @@ bool Tracking::TrackReferenceKeyFrame()
 
     // send(sock , hello , strlen(hello) , 0 );
     send(sock , frame_id_bytes , strlen(frame_id_bytes) , 0 );    
-    printf("Hello message sent by cpp\n");
+    cout << "message sent by cpp " << mCurrentFrame.mnId << endl;;
 
     int BUFFER_SIZE = 1024 * 64;
     double pose_buffer[BUFFER_SIZE] = {0};
     valread = read( sock , pose_buffer, 1024);
-    for (int i = 0; i < 16; i++) {
-        cout << pose_buffer[i] << endl;
-    }    
+    //for (int i = 0; i < 16; i++) {
+    //    cout << pose_buffer[i] << endl;
+    //}    
     printf("message received by cpp \n");
 
-    cv::Mat pose_mat(cv::Size(4, 4), CV_64FC1);
-    for(int i = 0; i < pose_mat.rows; i++){
-        for(int j = 0; j < pose_mat.cols; j++){
-            pose_mat.at<double>(i, j) = pose_buffer[i*pose_mat.cols + j];
+    // cv::Mat pose_mat = cv::Mat::eye(4,4,CV_32F);
+    // cv::Mat pose_mat(4, 4, CV_32F);
+    // for(int i = 0; i < pose_mat.rows; i++){
+    //     for(int j = 0; j < pose_mat.cols; j++){
+    //         pose_mat.at<double>(i, j) = pose_buffer[i*pose_mat.cols + j];
+    //     }
+    // }
+    
+    for(int i = 0; i < mCurrentFrame.mTcw.rows; i++){
+        for(int j = 0; j < mCurrentFrame.mTcw.cols; j++){
+            mCurrentFrame.mTcw.at<float>(i, j) = pose_buffer[i*mCurrentFrame.mTcw.cols + j];
         }
-    }    
-    cout << "pose_buffer[i]" << endl;
-    cout << pose_mat << endl;
+    }
+
+    mCurrentFrame.UpdatePoseMatrices();
+
+    // cout << "pose_buffer[i]" << endl;
+    // cout << pose_mat << endl;
+    cout << "new updated pose" << endl;
+    cout << mCurrentFrame.mTcw << endl;
+    cout << "=================================" << endl;
+    cout << endl;
+
+    // mCurrentFrame.SetPose(pose_mat);
     /***************************************************
     **********************  Comm  **********************
     ****************************************************/        

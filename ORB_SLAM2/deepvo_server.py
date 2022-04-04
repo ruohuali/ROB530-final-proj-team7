@@ -18,7 +18,7 @@ def floatList2Bytes(lst):
         buf += struct.pack('d', val)
     return buf
 
-def toSO3(x):
+def toSE3(x):
     pose = np.zeros((4,4))
     R = np.array(eulerAnglesToRotationMatrix(x[:3]))
     t = np.array(x[3:])
@@ -34,47 +34,52 @@ seq_len, overlap, batch_size = 6, 5, 1
 
 # Initialize and load pretrained model
 M_deepvo = DeepVO(par.img_h, par.img_w, par.batch_norm)
-if torch.cuda.is_available():
-    M_deepvo.to('cuda')
-    M_deepvo.load_state_dict(torch.load('deepvo/model/t000102050809_v04060710_im184x608_s5x7_b8_rnn1000_optAdagrad_lr0.0005.model.train'))
-else:
-    M_deepvo.load_state_dict(torch.load('deepvo/model/t000102050809_v04060710_im184x608_s5x7_b8_rnn1000_optAdagrad_lr0.0005.model.train', map_location={'cuda:0': 'cpu'}))
+#if torch.cuda.is_available():
+    # M_deepvo.to('cuda')
+#    M_deepvo.load_state_dict(torch.load('deepvo/model/t000102050809_v04060710_im184x608_s5x7_b8_rnn1000_optAdagrad_lr0.0005.model.train'))
+#else:
+M_deepvo.load_state_dict(torch.load('deepvo/model/t000102050809_v04060710_im184x608_s5x7_b8_rnn1000_optAdagrad_lr0.0005.model.train', map_location={'cuda:0': 'cpu'}))
 M_deepvo.eval()
 
 # Preprocess all input images
 df = get_data_info(folder_list=[seq_num], seq_len_range=[seq_len, seq_len], overlap=overlap, sample_times=1, shuffle=False, sort=False)
 df = df.loc[df.seq_len == seq_len]  # drop last
 dataset = ImageSequenceDataset(df, par.resize_mode, (par.img_w, par.img_h), par.img_means, par.img_stds, par.minus_point_5)
+print('Finished loading dataset..\n')
+
+prev_pose = [0,0,0,0,0,0]
+first_msg = True
+
+# Set up socket to client
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+s.bind((HOST, PORT))
+
 
 while True:
-
-    # Set up socket to client
-    #s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    #s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    #s.bind((HOST, PORT))
-    #s.listen()
-    #conn, addr = s.accept()
-    #print(f"Connected by {addr}")
     
     # Recieve message from ORB SLAM
-    #data = conn.recv(1024)
-    #data = int(data.decode("utf-8") )
-    #print("Received message from client...")
-    #print(data)
+    s.listen()
+    conn, addr = s.accept()
+    print(f"Connected by {addr}")
+    data = conn.recv(1024)
+    img_idx = int(data.decode("utf-8") )
+    print("Received message from client...")
+    print('received idx:', img_idx)
     #if not data:
     #    break
     #*************************************
     # Set imageindex AND POSE FROM SERVER HERE
-    img_idx = 2
-    prev_pose = [0,0,0,0,0,0]
+    #img_idx = 2
+    # prev_pose = [0,0,0,0,0,0]
     #*************************************
 
     # Index differently in first sequence
-    if img_idx < 6:
+    if img_idx < 5:
         ds_idx = 0
         pose_idx = img_idx
     else:
-        ds_idx = img_idx-6
+        ds_idx = img_idx-5
         pose_idx = -1
 
     # Pass through DeepVO to get relative pose for all seq in seq_len
@@ -84,8 +89,11 @@ while True:
     
     # Only keep relevant idx in sequence
     predict_pose_seq = batch_predict_pose[0][pose_idx]
-    rel_pose = toSO3(predict_pose_seq)
-    print(rel_pose)
+    rel_pose = toSE3(predict_pose_seq)
+    if first_msg: 
+        prev_pose = predict_pose_seq
+        first_msg = False
+    #print(rel_pose)
 
     # Transform x,y,z using yaw of vehicle
     ang = eulerAnglesToRotationMatrix([0, prev_pose[0], 0])
@@ -95,12 +103,20 @@ while True:
     # Add relative pose to absolute
     abs_pose = [a + b for a, b in zip(predict_pose_seq, prev_pose)]
     abs_pose[0] = (abs_pose[0]+np.pi)%(2*np.pi)-np.pi # normalize to [-pi,pi] over y-axis
-    abs_pose = toSO3(abs_pose)
-    exit()
+    prev_pose = abs_pose
+    abs_pose = toSE3(abs_pose)
 
     # Send pose to ORB SLAM
-    #msg = floatList2Bytes(rel_pose)  
-    #msg = floatList2Bytes(abs_pose)
-    #conn.sendall(msg)
-    #print("Sent pose information to client...")
-    #print("XYZ: ", abs_pose[:3,3])
+    #rel_pose_lst_bytes = floatList2Bytes(rel_pose.reshape(-1).tolist())
+    #conn.sendall(rel_pose_lst_bytes)
+    abs_pose_lst_bytes = floatList2Bytes(abs_pose.reshape(-1).tolist())
+    conn.sendall(abs_pose_lst_bytes)
+    print("Sent pose information to client...")
+    print("SE3 matrix", abs_pose)
+    print("Pred XYZ: ", abs_pose[:3,3])
+
+    gt = dataset[ds_idx][2]
+    print("GT XYZ: ", gt[-1][3:])
+
+    print('--------------------------------------')
+
