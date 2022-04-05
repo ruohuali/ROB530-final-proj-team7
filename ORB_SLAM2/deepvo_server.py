@@ -10,7 +10,8 @@ import sys
 from deepvo.params import par
 from deepvo.model import DeepVO
 from deepvo.data_helper import get_data_info, ImageSequenceDataset
-from deepvo.helper import eulerAnglesToRotationMatrix
+from deepvo.helper import eulerAnglesToRotationMatrix, R_to_angle
+import array
 
 def floatList2Bytes(lst):
     buf = bytes()
@@ -27,10 +28,12 @@ def toSE3(x):
     pose[3,3] = 1
     return pose
 
+np.set_printoptions(suppress=True) # remove scientific notation when printing
 HOST = "127.0.0.1"  # Standard loopback interface address (localhost)
 PORT = 8080  # Port to listen on (non-privileged ports are > 1023)
 seq_num = sys.argv[1]
 seq_len, overlap, batch_size = 6, 5, 1
+
 
 # Initialize and load pretrained model
 M_deepvo = DeepVO(par.img_h, par.img_w, par.batch_norm)
@@ -47,30 +50,38 @@ df = df.loc[df.seq_len == seq_len]  # drop last
 dataset = ImageSequenceDataset(df, par.resize_mode, (par.img_w, par.img_h), par.img_means, par.img_stds, par.minus_point_5)
 print('Finished loading dataset..\n')
 
-prev_pose = [0,0,0,0,0,0]
-first_msg = True
 
 # Set up socket to client
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 s.bind((HOST, PORT))
 
-
 while True:
-    
+
     # Recieve message from ORB SLAM
     s.listen()
     conn, addr = s.accept()
-    print(f"Connected by {addr}")
-    data = conn.recv(1024)
-    img_idx = int(data.decode("utf-8") )
+    #print(f"Connected by {addr}")
+    data = conn.recv(136)
+    img_idx, recv_mTcw = 0, np.zeros(16, dtype=np.float64)
+    for i in range(0, len(data), 8):
+        if i == 0:
+            img_idx = int(struct.unpack('<d', data[i:i+8])[0])
+        else:
+            recv_mTcw[i//8 - 1] = float(struct.unpack('<d', data[i:i+8])[0])
+    recv_mTcw = recv_mTcw.reshape(4, 4)
+    recv_mTwc = np.linalg.inv(recv_mTcw)
+    pose_15 = R_to_angle(recv_mTwc[:3])
+    prev_pose = pose_15[:6]
+
     print("Received message from client...")
     print('received idx:', img_idx)
-    #if not data:
-    #    break
+    print('Previous pose recieved: ', prev_pose)
+    if not data:
+        break
     #*************************************
     # Set imageindex AND POSE FROM SERVER HERE
-    #img_idx = 2
+    # img_idx += 1
     # prev_pose = [0,0,0,0,0,0]
     #*************************************
 
@@ -89,11 +100,6 @@ while True:
     
     # Only keep relevant idx in sequence
     predict_pose_seq = batch_predict_pose[0][pose_idx]
-    rel_pose = toSE3(predict_pose_seq)
-    if first_msg: 
-        prev_pose = predict_pose_seq
-        first_msg = False
-    #print(rel_pose)
 
     # Transform x,y,z using yaw of vehicle
     ang = eulerAnglesToRotationMatrix([0, prev_pose[0], 0])
@@ -101,22 +107,17 @@ while True:
     predict_pose_seq[3:] = location
 
     # Add relative pose to absolute
-    abs_pose = [a + b for a, b in zip(predict_pose_seq, prev_pose)]
-    abs_pose[0] = (abs_pose[0]+np.pi)%(2*np.pi)-np.pi # normalize to [-pi,pi] over y-axis
-    prev_pose = abs_pose
-    abs_pose = toSE3(abs_pose)
+    send_mTwc = [a + b for a, b in zip(predict_pose_seq, prev_pose)]
+    send_mTwc[0] = (send_mTwc[0]+np.pi)%(2*np.pi)-np.pi # normalize to [-pi,pi] over y-axis
+    send_mTwc = toSE3(send_mTwc)
+    send_mTcw = np.linalg.inv(send_mTwc)
+    print('Absolute pose at ', img_idx)
+    print(send_mTcw)
 
     # Send pose to ORB SLAM
-    #rel_pose_lst_bytes = floatList2Bytes(rel_pose.reshape(-1).tolist())
-    #conn.sendall(rel_pose_lst_bytes)
-    abs_pose_lst_bytes = floatList2Bytes(abs_pose.reshape(-1).tolist())
+    abs_pose_lst_bytes = floatList2Bytes(send_mTcw.reshape(-1).tolist())
+    #abs_pose_lst_bytes = floatList2Bytes(np.linalg.inv(abs_pose).reshape(-1).tolist())
     conn.sendall(abs_pose_lst_bytes)
-    print("Sent pose information to client...")
-    print("SE3 matrix", abs_pose)
-    print("Pred XYZ: ", abs_pose[:3,3])
 
-    gt = dataset[ds_idx][2]
-    print("GT XYZ: ", gt[-1][3:])
-
-    print('--------------------------------------')
+    print('=================================================')
 

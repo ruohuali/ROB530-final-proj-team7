@@ -33,13 +33,11 @@
 #include"Optimizer.h"
 #include"PnPsolver.h"
 
+#include <stdlib.h>
+
 #include<iostream>
 
 #include<mutex>
-
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
 
 // Comm //
 #include <stdio.h>
@@ -48,6 +46,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <string>
+#include <vector>
 // Comm //
 
 using namespace std;
@@ -316,22 +315,26 @@ void Tracking::Track()
                 // Local Mapping might have changed some MapPoints tracked in last frame
                 CheckReplacedInLastFrame();
 
-                // if(mVelocity.empty() || mCurrentFrame.mnId<mnLastRelocFrameId+2)
-                // {
-                //     std::cout << "ref" << std::endl;
-                //     bOK = TrackReferenceKeyFrame();
-                // }
-                // else
-                // {
-                //     std::cout << "motion" << std::endl;
-                //     bOK = TrackWithMotionModel();
-                //     if(!bOK)
-                //         bOK = TrackReferenceKeyFrame();
-                // }
+                /*if(mVelocity.empty() || mCurrentFrame.mnId<mnLastRelocFrameId+2)
+                {
+                    std::cout << "TrackReferenceKeyFrame called from line 319" << std::endl;
+                    bOK = TrackReferenceKeyFrame();
+                }
+                else
+                {
+                    std::cout << "TrackWithMotionModel called from line 324" << std::endl;
+                    bOK = TrackWithMotionModel();
+                    if(!bOK) {
+                        std::cout << "TrackReferenceKeyFrame called from line 327" << std::endl;
+                        bOK = TrackReferenceKeyFrame();
+                    }
+                }*/
+                cout << "TrackReferenceKeyFrame called from line 330" << endl;
                 bOK = TrackReferenceKeyFrame();     // works just fine
             }
             else
             {
+                std::cout << "Relocalization called from line 335" << std::endl;
                 bOK = Relocalization();
             }
         }
@@ -351,10 +354,12 @@ void Tracking::Track()
                     // In last frame we tracked enough MapPoints in the map
                     if(!mVelocity.empty())
                     {
+                        std::cout << "TrackWithMotionModel called from line 355" << std::endl;
                         bOK = TrackWithMotionModel();
                     }
                     else
                     {
+                        std::cout << "TrackReferenceKeyFrame called from line 360" << std::endl;
                         bOK = TrackReferenceKeyFrame();
                     }
                 }
@@ -787,16 +792,19 @@ bool Tracking::TrackReferenceKeyFrame()
     mCurrentFrame.mvpMapPoints = vpMapPointMatches;
     mCurrentFrame.SetPose(mLastFrame.mTcw);
 
+    cout << "pre-optimization pose at frame: " << mCurrentFrame.mnId << endl;
+    cout << mCurrentFrame.mTcw << endl;
+
     /***************************************************
     @note these keypoints are maybe irrelevant
     temp save them just in case needed for mapping and plotting
     ****************************************************/
     Optimizer::PoseOptimization(&mCurrentFrame);
 
-
     /***************************************************
     **********************  Comm  **********************
     ****************************************************/   
+    
     printf("\nConnection Ready \n");
     const int PORT = 8080;
     const char* HOST = "127.0.0.1";
@@ -827,11 +835,20 @@ bool Tracking::TrackReferenceKeyFrame()
         return -1;
     }
 
-    std::string frame_id_str = std::to_string(mCurrentFrame.mnId);
-    char* frame_id_bytes = const_cast<char*>(frame_id_str.c_str());
+    std::vector<double> msg_send;
+    msg_send.push_back((double)mCurrentFrame.mnId);
+    for (int i = 0; i < 4; ++i) {
+        for (int j = 0; j < 4; ++j) {
+            msg_send.push_back((double)mCurrentFrame.mTcw.at<float>(i, j));
+        }
+    }
+    //std::string frame_id_str = std::to_string(mCurrentFrame.mnId);
+    //char* frame_id_bytes = const_cast<char*>(frame_id_str.c_str());
 
     // send(sock , hello , strlen(hello) , 0 );
-    send(sock , frame_id_bytes , strlen(frame_id_bytes) , 0 );    
+    //char* result = reinterpret_cast<char*>(&msg_send);
+    //cout << send(sock , result.data() , sizeof(char)*result.size(), 0 ) << endl; 
+    cout << send(sock , msg_send.data() , sizeof(msg_send[0])*msg_send.size(), 0 ) << endl;    
     cout << "message sent by cpp " << mCurrentFrame.mnId << endl;;
 
     int BUFFER_SIZE = 1024 * 64;
@@ -850,6 +867,9 @@ bool Tracking::TrackReferenceKeyFrame()
     //     }
     // }
     
+
+
+    // set pose
     for(int i = 0; i < mCurrentFrame.mTcw.rows; i++){
         for(int j = 0; j < mCurrentFrame.mTcw.cols; j++){
             mCurrentFrame.mTcw.at<float>(i, j) = pose_buffer[i*mCurrentFrame.mTcw.cols + j];
@@ -858,9 +878,11 @@ bool Tracking::TrackReferenceKeyFrame()
 
     mCurrentFrame.UpdatePoseMatrices();
 
+
+    
     // cout << "pose_buffer[i]" << endl;
     // cout << pose_mat << endl;
-    cout << "new updated pose" << endl;
+    cout << "post-optimization pose at frame: " << mCurrentFrame.mnId << endl;
     cout << mCurrentFrame.mTcw << endl;
     cout << "=================================" << endl;
     cout << endl;
