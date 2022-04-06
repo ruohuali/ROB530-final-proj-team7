@@ -49,7 +49,10 @@ df = get_data_info(folder_list=[seq_num], seq_len_range=[seq_len, seq_len], over
 df = df.loc[df.seq_len == seq_len]  # drop last
 dataset = ImageSequenceDataset(df, par.resize_mode, (par.img_w, par.img_h), par.img_means, par.img_stds, par.minus_point_5)
 print('Finished loading dataset..\n')
-
+'''
+gt = np.genfromtxt('/mnt/hgfs/EECS568/kitti_dataset/poses/'+seq_num+'.txt')
+gt = gt.reshape(gt.shape[0], 3, 4)
+'''
 
 # Set up socket to client
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -92,7 +95,7 @@ while True:
     else:
         ds_idx = img_idx-5
         pose_idx = -1
-
+    
     # Pass through DeepVO to get relative pose for all seq in seq_len
     x = dataset[ds_idx][1]
     x = x[None,:] # mimic batch size of 1
@@ -113,6 +116,13 @@ while True:
     send_mTcw = np.linalg.inv(send_mTwc)
     print('Absolute pose at ', img_idx)
     print(send_mTcw)
+    '''
+    send_mTwc = np.zeros((4,4))
+    send_mTwc[:3] = gt[img_idx]
+    send_mTwc[3,3] = 1
+    send_mTcw = np.linalg.inv(send_mTwc)
+    print(send_mTcw)
+    '''
 
     # Send pose to ORB SLAM
     abs_pose_lst_bytes = floatList2Bytes(send_mTcw.reshape(-1).tolist())

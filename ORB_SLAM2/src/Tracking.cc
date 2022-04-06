@@ -208,7 +208,7 @@ cv::Mat Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRe
     }
 
     mCurrentFrame = Frame(mImGray,imGrayRight,timestamp,mpORBextractorLeft,mpORBextractorRight,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth);
-
+    
     Track();
 
     return mCurrentFrame.mTcw.clone();
@@ -315,7 +315,7 @@ void Tracking::Track()
                 // Local Mapping might have changed some MapPoints tracked in last frame
                 CheckReplacedInLastFrame();
 
-                /*if(mVelocity.empty() || mCurrentFrame.mnId<mnLastRelocFrameId+2)
+                if(mVelocity.empty() || mCurrentFrame.mnId<mnLastRelocFrameId+2)
                 {
                     std::cout << "TrackReferenceKeyFrame called from line 319" << std::endl;
                     bOK = TrackReferenceKeyFrame();
@@ -328,13 +328,14 @@ void Tracking::Track()
                         std::cout << "TrackReferenceKeyFrame called from line 327" << std::endl;
                         bOK = TrackReferenceKeyFrame();
                     }
-                }*/
-                cout << "TrackReferenceKeyFrame called from line 330" << endl;
-                bOK = TrackReferenceKeyFrame();     // works just fine
+                }
+                //cout << "TrackReferenceKeyFrame called from line 330" << endl;
+                //bOK = TrackReferenceKeyFrame();     // works just fine
             }
             else
             {
                 std::cout << "Relocalization called from line 335" << std::endl;
+                bOK = true;
                 bOK = Relocalization();
             }
         }
@@ -417,8 +418,10 @@ void Tracking::Track()
         // If we have an initial estimation of the camera pose and matching. Track the local map.
         if(!mbOnlyTracking)
         {
-            if(bOK)
+            if(bOK) {
+                cout << "Track Local Map 423" << endl;
                 bOK = TrackLocalMap();
+            }
         }
         else
         {
@@ -792,9 +795,6 @@ bool Tracking::TrackReferenceKeyFrame()
     mCurrentFrame.mvpMapPoints = vpMapPointMatches;
     mCurrentFrame.SetPose(mLastFrame.mTcw);
 
-    cout << "pre-optimization pose at frame: " << mCurrentFrame.mnId << endl;
-    cout << mCurrentFrame.mTcw << endl;
-
     /***************************************************
     @note these keypoints are maybe irrelevant
     temp save them just in case needed for mapping and plotting
@@ -805,7 +805,7 @@ bool Tracking::TrackReferenceKeyFrame()
     **********************  Comm  **********************
     ****************************************************/   
     
-    printf("\nConnection Ready \n");
+    /*
     const int PORT = 8080;
     const char* HOST = "127.0.0.1";
 
@@ -813,26 +813,16 @@ bool Tracking::TrackReferenceKeyFrame()
     struct sockaddr_in serv_addr;
     char *hello = "Hello from client";
     char buffer[1024] = {0};
-    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
-    {
+    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         printf("\n Socket creation error \n");
-        return -1;
     }
-   
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(PORT);
-       
-    // Convert IPv4 and IPv6 addresses from text to binary form
-    if(inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr)<=0) 
-    {
+    if(inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr)<=0) {
         printf("\nInvalid address/ Address not supported \n");
-        return -1;
     }
-   
-    if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
-    {
+    if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
         printf("\nConnection Failed \n");
-        return -1;
     }
 
     std::vector<double> msg_send;
@@ -842,32 +832,16 @@ bool Tracking::TrackReferenceKeyFrame()
             msg_send.push_back((double)mCurrentFrame.mTcw.at<float>(i, j));
         }
     }
-    //std::string frame_id_str = std::to_string(mCurrentFrame.mnId);
-    //char* frame_id_bytes = const_cast<char*>(frame_id_str.c_str());
 
-    // send(sock , hello , strlen(hello) , 0 );
-    //char* result = reinterpret_cast<char*>(&msg_send);
-    //cout << send(sock , result.data() , sizeof(char)*result.size(), 0 ) << endl; 
-    cout << send(sock , msg_send.data() , sizeof(msg_send[0])*msg_send.size(), 0 ) << endl;    
-    cout << "message sent by cpp " << mCurrentFrame.mnId << endl;;
+    send(sock, msg_send.data() ,sizeof(msg_send[0])*msg_send.size(), 0); 
+    cout << "FrameID requested: " << mCurrentFrame.mnId << endl;;
 
     int BUFFER_SIZE = 1024 * 64;
     double pose_buffer[BUFFER_SIZE] = {0};
-    valread = read( sock , pose_buffer, 1024);
+    valread = read(sock, pose_buffer, 1024);
     //for (int i = 0; i < 16; i++) {
     //    cout << pose_buffer[i] << endl;
-    //}    
-    printf("message received by cpp \n");
-
-    // cv::Mat pose_mat = cv::Mat::eye(4,4,CV_32F);
-    // cv::Mat pose_mat(4, 4, CV_32F);
-    // for(int i = 0; i < pose_mat.rows; i++){
-    //     for(int j = 0; j < pose_mat.cols; j++){
-    //         pose_mat.at<double>(i, j) = pose_buffer[i*pose_mat.cols + j];
-    //     }
-    // }
-    
-
+    //}
 
     // set pose
     for(int i = 0; i < mCurrentFrame.mTcw.rows; i++){
@@ -878,20 +852,17 @@ bool Tracking::TrackReferenceKeyFrame()
 
     mCurrentFrame.UpdatePoseMatrices();
 
-
-    
-    // cout << "pose_buffer[i]" << endl;
-    // cout << pose_mat << endl;
     cout << "post-optimization pose at frame: " << mCurrentFrame.mnId << endl;
     cout << mCurrentFrame.mTcw << endl;
     cout << "=================================" << endl;
     cout << endl;
+    */
 
     // mCurrentFrame.SetPose(pose_mat);
     /***************************************************
     **********************  Comm  **********************
     ****************************************************/        
-
+   
 
     // Discard outliers
     int nmatchesMap = 0;
@@ -1013,8 +984,62 @@ bool Tracking::TrackWithMotionModel()
     if(nmatches<20)
         return false;
 
+    cout << "pre-optimization pose at frame: " << mCurrentFrame.mnId << endl;
+    cout << mCurrentFrame.mTcw << endl;
+    
     // Optimize frame pose with all matches
     Optimizer::PoseOptimization(&mCurrentFrame);
+
+    const int PORT = 8080;
+    const char* HOST = "127.0.0.1";
+
+    int sock = 0, valread;
+    struct sockaddr_in serv_addr;
+    char *hello = "Hello from client";
+    char buffer[1024] = {0};
+    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        printf("\n Socket creation error \n");
+    }
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(PORT);
+    if(inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr)<=0) {
+        printf("\nInvalid address/ Address not supported \n");
+    }
+    if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
+        printf("\nConnection Failed \n");
+    }
+
+    std::vector<double> msg_send;
+    msg_send.push_back((double)mCurrentFrame.mnId);
+    for (int i = 0; i < 4; ++i) {
+        for (int j = 0; j < 4; ++j) {
+            msg_send.push_back((double)mCurrentFrame.mTcw.at<float>(i, j));
+        }
+    }
+
+    send(sock, msg_send.data() ,sizeof(msg_send[0])*msg_send.size(), 0); 
+    cout << "FrameID requested: " << mCurrentFrame.mnId << endl;;
+
+    int BUFFER_SIZE = 1024 * 64;
+    double pose_buffer[BUFFER_SIZE] = {0};
+    valread = read(sock, pose_buffer, 1024);
+    //for (int i = 0; i < 16; i++) {
+    //    cout << pose_buffer[i] << endl;
+    //}
+
+    // set pose
+    for(int i = 0; i < mCurrentFrame.mTcw.rows; i++){
+        for(int j = 0; j < mCurrentFrame.mTcw.cols; j++){
+            mCurrentFrame.mTcw.at<float>(i, j) = pose_buffer[i*mCurrentFrame.mTcw.cols + j];
+        }
+    }
+
+    mCurrentFrame.UpdatePoseMatrices();
+
+    cout << "post-optimization pose at frame: " << mCurrentFrame.mnId << endl;
+    cout << mCurrentFrame.mTcw << endl;
+    cout << "=================================" << endl;
+    cout << endl;
 
     // Discard outliers
     int nmatchesMap = 0;
@@ -1035,7 +1060,7 @@ bool Tracking::TrackWithMotionModel()
             else if(mCurrentFrame.mvpMapPoints[i]->Observations()>0)
                 nmatchesMap++;
         }
-    }    
+    }
 
     if(mbOnlyTracking)
     {
@@ -1466,8 +1491,10 @@ bool Tracking::Relocalization()
     // Track Lost: Query KeyFrame Database for keyframe candidates for relocalisation
     vector<KeyFrame*> vpCandidateKFs = mpKeyFrameDB->DetectRelocalizationCandidates(&mCurrentFrame);
 
-    if(vpCandidateKFs.empty())
+    if(vpCandidateKFs.empty()) {
+        cout << "no keyframe candidates" << endl;
         return false;
+    }
 
     const int nKFs = vpCandidateKFs.size();
 
@@ -1610,6 +1637,7 @@ bool Tracking::Relocalization()
 
     if(!bMatch)
     {
+        cout << "pose is not supported by enough inliers" << endl;
         return false;
     }
     else
