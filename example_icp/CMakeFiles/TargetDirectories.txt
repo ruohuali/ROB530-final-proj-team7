@@ -1,4 +1,0 @@
-/home/xun/ROB530_project/ROB530-final-proj-team19/example_icp/CMakeFiles/rebuild_cache.dir
-/home/xun/ROB530_project/ROB530-final-proj-team19/example_icp/CMakeFiles/edit_cache.dir
-/home/xun/ROB530_project/ROB530-final-proj-team19/example_icp/CMakeFiles/server.dir
-/home/xun/ROB530_project/ROB530-final-proj-team19/example_icp/CMakeFiles/client.dir
