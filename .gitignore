@@ -21,4 +21,7 @@
 **/build/
 *~
 **/lib/
+deepvo/model/*.train
+deepvo/.DS_Store
+deepvo/__pycache__/*
 
