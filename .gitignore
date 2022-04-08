@@ -24,4 +24,5 @@
 deepvo/model/*.train
 deepvo/.DS_Store
 deepvo/__pycache__/*
-
+.vscode
+.DS_Store

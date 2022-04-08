@@ -4,7 +4,8 @@ class Parameters():
 	def __init__(self):
 		self.n_processors = 2
 		# Path
-		self.data_dir =  '/mnt/hgfs/EECS568/kitti_dataset'
+		self.data_dir =  '/Users/lounisbouzit/Documents/EECS568/kitti_dataset'
+		#self.data_dir =  '/mnt/hgfs/EECS568/kitti_dataset'
 		self.image_dir = self.data_dir + '/sequences/'
 		self.pose_dir = self.data_dir + '/poses/'
 		

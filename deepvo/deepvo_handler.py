@@ -7,6 +7,7 @@ from deepvo.helper import eulerAnglesToRotationMatrix
 
 class DeepVOHandler():
     def __init__(self, seq_num, seq_len=6, overlap=5, batch_size=1):
+        self.seq_len = seq_len
         self.M_deepvo = DeepVO(par.img_h, par.img_w, par.batch_norm)
         self.M_deepvo.load_state_dict(torch.load('deepvo/model/t000102050809_v04060710_im184x608_s5x7_b8_rnn1000_optAdagrad_lr0.0005.model.train', map_location={'cuda:0': 'cpu'}))
         self.M_deepvo.eval()
@@ -18,9 +19,9 @@ class DeepVOHandler():
     # prev_pose: [theta_y, theta_x, theta_z, x, y, z]
     def get_pose(self, img_idx, prev_pose):
         # Index differently in first sequence
-        if img_idx < 5:
+        if img_idx < 6:
             ds_idx = 0
-            pose_idx = img_idx
+            pose_idx = img_idx-1
         else:
             ds_idx = img_idx-5
             pose_idx = -1
@@ -46,4 +47,4 @@ class DeepVOHandler():
         return rel_pose, cur_pose
     
     def get_len(self):
-        return len(self.dataset)
+        return len(self.dataset)+self.seq_len-1
