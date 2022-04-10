@@ -4,8 +4,18 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.spatial.transform import Rotation
 
-def toGTSAMEdge(vo_pose):
-    R = gtsam.Rot3(vo_pose[:,:3])
+def mat2Euler(mat):
+    e_ang = Rotation.from_matrix(mat).as_euler('xyz', degrees=False)
+    return [0, e_ang[1], 0]
+
+def euler2Mat(e_ang):
+    mat = Rotation.from_euler('xyz', e_ang, degrees=False).as_matrix()
+    return mat
+
+def toGTSAMEdgeOnlyYaw(vo_pose):
+    e_ang = mat2Euler(vo_pose[:,:3])
+    mat = euler2Mat(e_ang)
+    R = gtsam.Rot3(mat)
     t = gtsam.Point3(vo_pose[:,3])
     gtsam_pose = gtsam.Pose3(R, t)
     return gtsam_pose
@@ -17,13 +27,17 @@ kitti_path = '/mnt/hgfs/EECS568/kitti_dataset' # CHANGE THIS LINE ACCORDINGLY
 gt = np.genfromtxt(kitti_path+'/poses/'+seq_num+'.txt')
 rel_poses = np.genfromtxt('deepvo/poses/'+seq_num+'_rel.txt')
 abs_poses = np.genfromtxt('deepvo/poses/'+seq_num+'_abs.txt')
+try:
+    loops = np.genfromtxt('loops/'+seq_num+'_loops.txt')
+except:
+    loops = np.zeros((0,1))
 
 # Reshape to (N,3,4)
 N = gt.shape[0]
 gt = gt.reshape(N, 3, 4)
 rel_poses = rel_poses.reshape(N, 3, 4)
 abs_poses = abs_poses.reshape(N, 3, 4)
-N = min(N, 500) # COMMENT OUT THIS LINE TO RUN FOR FULL SEQUENCE
+N = min(N, 600) # COMMENT OUT THIS LINE TO RUN FOR FULL SEQUENCE
 
 # Intialize ISAM2
 params = gtsam.ISAM2Params()
@@ -48,9 +62,15 @@ for i in range(1,N):
     prev_pose = cur_est.atPose3(i-1)
     initial.insert(i, prev_pose)
 
-    edge = toGTSAMEdge(rel_poses[i])
+    edge = toGTSAMEdgeOnlyYaw(rel_poses[i])
     factor = gtsam.BetweenFactorPose3(i-1, i, edge, noise)
     graph.add(factor)
+
+    loop_detect = np.argwhere(loops[:,0] == i)
+    if len(loop_detect) > 0:
+        loop = loop_detect[0][0]
+        factor = gtsam.BetweenFactorPose3(i, loop, gtsam.Pose3(), noise)
+        graph.add(factor)
 
     isam.update(graph, initial)
     cur_est = isam.calculateEstimate()
