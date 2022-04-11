@@ -7,7 +7,7 @@ from deepvo.helper import eulerAnglesToRotationMatrix, R_to_angle
 def toSE3(vo_pose):
     pose = np.zeros((4,4))
     pose[3,3] = 1
-    pose[:3,:3] = vo_pose
+    pose[:3] = vo_pose
     return pose
 
 def floatList2Bytes(lst):
@@ -63,8 +63,8 @@ while True:
 
     # Add relative pose to absolute
     new_pose = [a + b for a, b in zip(predict_pose_seq, prev_pose)]
-    new_pose[0] = (send_mTwc[0]+np.pi)%(2*np.pi)-np.pi # normalize to [-pi,pi] over y-axis
-    send_mTwc = np.zeros(3,4)
+    new_pose[0] = (new_pose[0]+np.pi)%(2*np.pi)-np.pi # normalize to [-pi,pi] over y-axis
+    send_mTwc = np.zeros((3,4))
     send_mTwc[:3,:3] = eulerAnglesToRotationMatrix(new_pose[:3])
     send_mTwc[:3,3] = new_pose[3:]
     send_mTwc = toSE3(send_mTwc)
