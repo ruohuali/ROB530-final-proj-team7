@@ -62,8 +62,11 @@ while True:
     predict_pose_seq[3:] = location
 
     # Add relative pose to absolute
-    send_mTwc = [a + b for a, b in zip(predict_pose_seq, prev_pose)]
-    send_mTwc[0] = (send_mTwc[0]+np.pi)%(2*np.pi)-np.pi # normalize to [-pi,pi] over y-axis
+    new_pose = [a + b for a, b in zip(predict_pose_seq, prev_pose)]
+    new_pose[0] = (send_mTwc[0]+np.pi)%(2*np.pi)-np.pi # normalize to [-pi,pi] over y-axis
+    send_mTwc = np.zeros(3,4)
+    send_mTwc[:3,:3] = eulerAnglesToRotationMatrix(new_pose[:3])
+    send_mTwc[:3,3] = new_pose[3:]
     send_mTwc = toSE3(send_mTwc)
     send_mTcw = np.linalg.inv(send_mTwc)
     print('Absolute pose at ', img_idx)
