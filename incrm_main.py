@@ -28,7 +28,7 @@ gt = np.genfromtxt(kitti_path+'/poses/'+seq_num+'.txt')
 rel_poses = np.genfromtxt('deepvo/poses/'+seq_num+'_rel.txt')
 abs_poses = np.genfromtxt('deepvo/poses/'+seq_num+'_abs.txt')
 try:
-    loops = np.genfromtxt('loops/'+seq_num+'_loops.txt')
+    loops = np.genfromtxt('resnet_loop_closure/gt_loops/'+seq_num+'_loops.txt')
 except:
     loops = np.zeros((0,1))
 
@@ -37,7 +37,7 @@ N = gt.shape[0]
 gt = gt.reshape(N, 3, 4)
 rel_poses = rel_poses.reshape(N, 3, 4)
 abs_poses = abs_poses.reshape(N, 3, 4)
-N = min(N, 600) # COMMENT OUT THIS LINE TO RUN FOR FULL SEQUENCE
+#N = min(N, 300) # COMMENT OUT THIS LINE TO RUN FOR FULL SEQUENCE
 
 # Intialize ISAM2
 params = gtsam.ISAM2Params()
@@ -46,12 +46,13 @@ params.setRelinearizeSkip(1)
 isam = gtsam.ISAM2(params)
 
 # Use same noise everywhere (can change this)
-noise = gtsam.noiseModel.Diagonal.Sigmas([0.01,0.01,0.01,0.01,0.01,0.01])
+odom_noise = gtsam.noiseModel.Gaussian.Covariance(np.eye(6)/10)
+loop_noise = gtsam.noiseModel.Gaussian.Covariance(np.eye(6))
 
 # Intialize graph and prior
 graph = gtsam.NonlinearFactorGraph()
 initial = gtsam.Values()
-graph.add(gtsam.PriorFactorPose3(0, gtsam.Pose3(), noise))
+graph.add(gtsam.PriorFactorPose3(0, gtsam.Pose3(), odom_noise))
 initial.insert(0, gtsam.Pose3())
 
 optm_poses = np.zeros((N,3))
@@ -63,14 +64,15 @@ for i in range(1,N):
     initial.insert(i, prev_pose)
 
     edge = toGTSAMEdgeOnlyYaw(rel_poses[i])
-    factor = gtsam.BetweenFactorPose3(i-1, i, edge, noise)
+    factor = gtsam.BetweenFactorPose3(i-1, i, edge, odom_noise)
     graph.add(factor)
 
-    loop_detect = np.argwhere(loops[:,0] == i)
-    if len(loop_detect) > 0:
-        loop = loop_detect[0][0]
-        factor = gtsam.BetweenFactorPose3(i, loop, gtsam.Pose3(), noise)
-        graph.add(factor)
+    # Attemp at loop closure in gtsam
+    #loop_detect = np.argwhere(loops[:,0] == i)
+    #if len(loop_detect) > 0:
+    #    loop = loop_detect[0][0]
+    #    factor = gtsam.BetweenFactorPose3(i, loop, gtsam.Pose3(), loop_noise)
+    #    graph.add(factor)
 
     isam.update(graph, initial)
     cur_est = isam.calculateEstimate()
@@ -84,6 +86,3 @@ plt.plot(gt[:N,0,3], gt[:N,2,3], 'tab:green', label='Ground Truth')
 plt.legend()
 plt.axis('equal')
 plt.show()
-
-
-    

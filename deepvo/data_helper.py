@@ -3,7 +3,6 @@ import glob
 import pandas as pd
 import numpy as np
 from PIL import Image
-#import cv2
 import torch
 from torch.utils.data import Dataset, DataLoader
 from torch.utils.data.sampler import Sampler

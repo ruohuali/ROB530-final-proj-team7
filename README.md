@@ -1,40 +1,47 @@
-# ROB530-final-proj-team19
-A freaking cool codebase for some SLAM stuff
+# Implementing Deep Learning based methods in SLAM algorithms
+Team 7: Lounis Bouzit, Ruohua Li, Xun Tu, Ziyi Liu\
+ROB 530 Final Project\
 
-(Xun Tu)
-Currently, the model in directory ORB-SLAM2 works well on my Ubuntu machine
-(OpenCV: , Eigen: 3.10)
-Sometimes I may need to remove "build" directory and rebuild everything before moving on
-I would recommend to incorporate this directory directly into our project
-and continue our modifications on it. 
-I have not modified anything yet, except several TODOs in the files listed below
+ADD ABSTRACT HERE\
+
+## KITTI Dataset
+
+## DeepVO
+Helper files for training and running DeepVO model. We have outputted results in deepvo/poses for ease of use in other parts of our pipeline.
+### Dependencies
+- [PyTorch](https://pytorch.org/get-started/locally/)
+- [torchvision](https://pytorch.org/get-started/locally/) 
+- [pillow](https://pillow.readthedocs.io/en/stable/installation.html)
+- [pandas](https://pandas.pydata.org/docs/getting_started/install.html) 
+### Model & Path to Dataset
+- Inside deepvo/params.py change self.data_dir to your path to KITTI dataset
+- Add [pre-trained model](https://drive.google.com/file/d/1l0s3rYWgN8bL0Fyofee8IhN-0knxJF22/view) to deepvo/model (provided by [alexart13](https://github.com/alexart13))
+### Usage
+```
+from deepvo_handler import DeepVOHandler
+dvoh = DeepVOHandler('00') # KITTI sequence number 00
+N = dvoh.get_len()
+for i in range(N):
+    rel_pose, abs_pose = dvoh.get_pose(i, prev_pose) # Gets pose relative to previous frame
+```
+
+## ResNet Loop Closure
 
 
-# Loop closing Modification (Xun Tu)
-I am considering passing the name of the image that the currently evaluated frame is using to 
-python model, and then generate several logits for comparison
-The trajectory would be:
-1. *in mono_kitti.cc, pass an extra variable as the name of the image to system "SLAM" 
+## GTSAM Optimization
+Two main functions called batch_main.py and incrm_main.py which use GTSAM optimizations on poses provided from DeepVO (use get_poses.py in deepvo/ to export).
+### Dependencies
+- [gtsam](https://pypi.org/project/gtsam/)
+- [scipy](https://docs.scipy.org/doc/scipy/reference/spatial.transform.html)
 
-2. *in System.cc/System.h, pass an extra variable as the name of the image to "mpTracking"
+### Path to Dataset
+- Change variable kitti_path to your path to KITTI dataset
+- Uses deepvo/poses, ensure those are exported first with directions above
 
-3. *in Tracking.cc/Tracking.h, pass an extra variable as the name of the image to "mCurrentFrame"
+### Usage
+```
+python3 batch_main.py [SEQ_NUM]
+python3 incrm_main.py [SEQ_NUM]
+```
 
-4. *in Frame.h/Frame.cc, add a new member as the name of the image
-
-5. *in KeyFrame.h/KeyFrame.cc, add a new member as the name of the image
-
-6. *in LoopClosing.cc, instead of using mBowVec, pass the name of the image of the KeyFrame to the socket and 
-grab the logits
-
-7. (optional) in LoopClosing.cc, replace "score()" with our own way to calculate the similarity between two vectors,
-but in a similar manner described in OrbVocabulary.h/TemplateVocabular.h/
--->  it turns out that the method "score()" only needs two sorted and normalized vectors, which is independent of the meaning of the vectors. And it actually depends on the user's setup. So, we may just pass the two vectors from our python model to it directly
-
-**Update 3/28/2022
-Have completed the steps listed above in general (marked in "*"). Now, the problem is... the server would shut up immediately after it receives the data and sends it back to the client, while the client needs to send the names of the image to the server several times. We need to fix this. 
-
-**Update 4/2/2022
-Have modified the server such that it won't shut down automatically after sending one piece of data (just by adding a while True ...) You may try it by yourself in demo_loop_closing and example_icp directory
-Also modify the file KeyFrameDataBase.cc, which was omitted by me last time. I fix the function to find the candidate keyframes. Now the whole pipeline works normally, at least it appears so.
-I hope to explore more about the loop closing algorithm. To be frank, it depends more on the ORB vocabulary than I thought. I want to evaluate the significance of our change, and maybe try to replace more parts with our own method
+## ORB-SLAM2
