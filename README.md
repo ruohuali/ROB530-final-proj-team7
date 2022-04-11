@@ -1,8 +1,8 @@
 # Implementing Deep Learning based methods in SLAM algorithms
 Team 7: Lounis Bouzit, Ruohua Li, Xun Tu, Ziyi Liu\
-ROB 530 Final Project\
+ROB 530 Final Project
 
-ADD ABSTRACT HERE\
+ADD ABSTRACT HERE
 
 ## KITTI Dataset
 
@@ -45,3 +45,22 @@ python3 incrm_main.py [SEQ_NUM]
 ```
 
 ## ORB-SLAM2
+ORB SLAM run using DeepVO as motion model and ResNet-50 model for detecting loop closure.
+
+### Dependencies
+- [socket](https://docs.python.org/3/library/socket.html)
+- [ORB-SLAM2](https://github.com/raulmur/ORB_SLAM2)
+
+### Usage: Python Server
+```
+python3 deepvo_server.py [SEQ_NUM]
+python3 [LOOP CLOSURE SEVER GOES HERE]
+```
+
+### Usage: C++ Client
+```
+.\build.sh
+./Examples/Stereo/stereo_kitti Vocabulary/ORBvoc.txt Examples/Stereo/KITTIX.yaml PATH_TO_DATASET_FOLDER/dataset/sequences/SEQUENCE_NUMBER
+```
+
+
