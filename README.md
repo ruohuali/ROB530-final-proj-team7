@@ -66,7 +66,7 @@ python3 deepvo_server.py [SEQ_NUM]
 
 ### Usage: C++ Client
 ```
-.\build.sh
+./build.sh
 ./Examples/Stereo/stereo_kitti Vocabulary/ORBvoc.txt Examples/Stereo/KITTIX.yaml PATH_TO_DATASET_FOLDER/dataset/sequences/SEQUENCE_NUMBER
 ```
 ## ORB-SLAM2_ResNet
@@ -92,7 +92,7 @@ python3 server.py
 ### Usage: C++ Client
 Open a separate window, and type
 ```
-.\build.sh
+./build.sh
 ./Examples/Stereo/stereo_kitti Vocabulary/ORBvoc.txt Examples/Stereo/KITTIX.yaml PATH_TO_DATASET_FOLDER/dataset/sequences/SEQUENCE_NUMBER
 ```
 as is explained in the readme file contained in ORB_SLAM2_resnet
@@ -102,6 +102,7 @@ as is explained in the readme file contained in ORB_SLAM2_resnet
 error: ‘decay_t’ is not a member of ‘std’ 
 ```
 try changing "-std=c++11" to "-std=c++14" in CMakeList.txt
+
 2. In ORB-SLAM 2 folder, if the program is failed saying that "no module 'Pangolin' or 'Eigen' is found", even if you have already installed them, try replacing the codes in CMakeList.txt
 ```
 find_package(Eigen3 3.1.0 REQUIRED)
@@ -112,4 +113,3 @@ list(APPEND CMAKE_INCLUDE_PATH "/usr/local/include")
 find_package (Eigen3 3.3 REQUIRED NO_MODULE)
 ```
 3. The files "resnet_server.py", "resnet50_places365.pth.tar", "categories_places365.txt" are just for you to have a brief preview on them. They are NOT working in ORB-SLAM2 pipeline. To see how to use them, please go into "ORB-SLAM2 ResNet" pipeline
-```
