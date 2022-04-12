@@ -1,3 +1,5 @@
+# Overview of the directory
+This directory explains how we integrate the pretrained model into the ORB-SLAM2 pipeline using socket programming
 # Explanation on the Model
 This directory contains a pretrained model in ResNet architecture that can 
 be used to do scene recognization. They are downloaded from https://github.com/CSAILVision/places365
@@ -10,8 +12,14 @@ out jobs.
 In this folder, a simple demonstration on my idea to integrate the model into orb-slam pipeline
 The client will send the name of the image to python file containing the model,
 and then the python file would send the logits back.
-On how to use them, please check the folder "example_icp" on how to set up the client
+About how to use them, please check the folder "example_icp" on how to set up the client
 and the server. 
-**Attention** When running the executable "./client", please attach the name of the image to handle 
+**Attention** When running the executable "./client", please attach the name of the image
 at argv[1]
+
+# Explanation on the Files
+Please notice that our server should hold on after it sends back the data. So, I have attached two versions of server here:
+server.py -> the server that would shut down immediately after it sends back the data. Just for demonstration. 
+server_used.py -> the server that would hold on. This is the one used in our module
+
 

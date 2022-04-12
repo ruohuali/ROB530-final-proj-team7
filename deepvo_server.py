@@ -17,8 +17,8 @@ def floatList2Bytes(lst):
     return buf
 
 np.set_printoptions(suppress=True) # remove scientific notation when printing
-HOST = "127.0.0.1"  # Standard loopback interface address (localhost)
-PORT = 8080  # Port to listen on (non-privileged ports are > 1023)
+HOST = "127.0.1.1"  # Standard loopback interface address (localhost)
+PORT = 4000  # Port to listen on (non-privileged ports are > 1023)
 seq_num = sys.argv[1]
 
 rel_poses = np.genfromtxt('deepvo/poses/'+seq_num+'_rel.txt')

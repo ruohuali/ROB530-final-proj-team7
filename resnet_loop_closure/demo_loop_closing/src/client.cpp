@@ -40,7 +40,7 @@ std::vector<double> byteArray2Float(unsigned char* buffer) {
 
 int main(int argc, char const *argv[])
 {
-    const int PORT = 8080;
+    const int PORT = 8081;
     const char* HOST = "127.0.0.1";
 
     int sock = 0, valread;
