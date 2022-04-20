@@ -1,8 +1,8 @@
-# Implementing Deep Learning based methods in SLAM algorithms
+# Deep learning-based Visual Odometry & Loop Closure for SLAM
 Team 7: Lounis Bouzit, Ruohua Li, Xun Tu, Ziyi Liu\
 ROB 530 Final Project
 
-ADD ABSTRACT HERE
+The goal of this project was to integrate deep learning methods into existing SLAM algorithms to hopefully in turn improve the performance. Modern computer vision algorithms are dominated by deep learning techniques so we proposed replacing the existing pose estimation step and loop closure. We trained and tested two models: DeepVO for visual odometry and ResNet-50 for place recognition. As one approach we modified ORB-SLAM2 to communicate with a server running our own models and compared the performance. As another, we implemented an optimization problem initialized based on the outputs of our deep learning based visual odometry.
 
 ## KITTI Dataset
 
